@@ -26,7 +26,7 @@ def heart_pulse_effect(duration: float = 2.5):
         z-index: 9999; pointer-events: none;
       }}
       .pulse-heart {{
-        font-size: 12rem; color: #ff4b8a;
+        font-size: 15rem; color: #ff4b8a;
         animation: beat 1s ease-in-out infinite, fadeout {duration}s forwards;
         text-shadow: 0 0 18px rgba(255,75,138,.8), 0 0 34px rgba(255,148,194,.6);
       }}
