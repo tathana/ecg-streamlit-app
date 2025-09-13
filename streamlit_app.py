@@ -15,79 +15,165 @@ from prediction import (
 # -------------------------------- Page setup --------------------------------
 st.set_page_config(page_title="ECG Classification", page_icon="🫀", layout="centered")
 
-# --------------------------- Health/Heart animations + Uploader styling ------------------------
+# ---------------------- EFFECT: Heart Pulse (แทนลูกโป่ง) --------------------
+def heart_pulse_effect(duration: float = 2.5):
+    """แสดงหัวใจใหญ่กลางจอ เต้นตุบๆ แล้วเฟดหาย"""
+    ph = st.empty()
+    ph.markdown(f"""
+    <style>
+      .pulse-wrap {{
+        position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
+        z-index: 9999; pointer-events: none;
+      }}
+      .pulse-heart {{
+        font-size: 12rem; color: #ff4b8a;
+        animation: beat 1s ease-in-out infinite, fadeout {duration}s forwards;
+        text-shadow: 0 0 18px rgba(255,75,138,.8), 0 0 34px rgba(255,148,194,.6);
+      }}
+      @keyframes beat {{
+        0%   {{ transform: scale(1);   }}
+        25%  {{ transform: scale(1.25);}}
+        40%  {{ transform: scale(1);   }}
+        60%  {{ transform: scale(1.18);}}
+        100% {{ transform: scale(1);   }}
+      }}
+      @keyframes fadeout {{
+        0%   {{ opacity: 1; }}
+        70%  {{ opacity: 1; }}
+        100% {{ opacity: 0; }}
+      }}
+    </style>
+    <div class="pulse-wrap">
+      <div class="pulse-heart">🫀</div>
+    </div>
+    """, unsafe_allow_html=True)
+    time.sleep(duration)
+    ph.empty()
+
+# --------------------------- Tech Heartbeat + ECG Neon Theme -----------------
 st.markdown("""
 <style>
-  /* Title: heart beat */
-  .hero { display:flex; align-items:center; gap:.6rem; margin:.25rem 0 .15rem 0; }
-  .heart {
-    font-size: 1.9rem; line-height:1;
-    animation: beat 1.8s ease-in-out infinite; transform-origin:center;
-    filter: drop-shadow(0 6px 14px rgba(255, 73, 109, .28));
+  :root{
+    --pink:#ff4b8a; --pink2:#ff94c2; --cyan:#45f4ff; --vio:#8a7dff;
+    --bg:#0a0b15; --bg2:#111325; --card:rgba(17,19,37,.72);
   }
-  @keyframes beat { 0%{transform:scale(1)} 20%{transform:scale(1.12)} 40%{transform:scale(1)} }
 
-  /* Upload bar → long rounded pill + animated gradient border */
+  /* Global background: subtle moving gradient + tiny bits */
+  html, body, .block-container{
+    background: radial-gradient(1200px 900px at 15% 10%, #0f1230 0%, var(--bg) 60%),
+                linear-gradient(120deg, #0b0d1d 0%, var(--bg) 100%) !important;
+  }
+  .block-container { padding-top: 1.2rem; }
+
+  /* Floating binary dots for "AI tech" feel */
+  body:before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:-1;
+    background-image:
+      radial-gradient(rgba(255,255,255,.08) 2px, transparent 2px),
+      radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+    background-position: 0 0, 25px 35px;
+    background-size: 45px 45px, 55px 55px;
+    animation: floatBits 16s linear infinite;
+    opacity:.45;
+  }
+  @keyframes floatBits { 0%{transform:translateY(0)} 50%{transform:translateY(-10px)} 100%{transform:translateY(0)} }
+
+  /* Sidebar & header */
+  section[data-testid="stSidebar"] { background: var(--bg2) !important; border-right: 1px solid rgba(255,255,255,.04); }
+  .stApp > header { background: transparent; }
+
+  /* Title with beating heart + glow ring */
+  .hero { display:flex; align-items:center; gap:.8rem; margin:.15rem 0 .4rem 0; }
+  .heart {
+    font-size: 2.1rem; line-height:1; position:relative; color:var(--pink);
+    animation: beat 1.4s ease-in-out infinite; transform-origin:center;
+    text-shadow: 0 0 12px rgba(255,75,138,.55), 0 0 28px rgba(255,148,194,.35);
+  }
+  .heart:after{
+    content:""; position:absolute; inset:-8px; border-radius:50%;
+    border:2px solid rgba(255,75,138,.35); animation:pulseRing 1.4s ease-out infinite;
+  }
+  @keyframes beat { 0%{transform:scale(1)} 25%{transform:scale(1.18)} 40%{transform:scale(1)} 60%{transform:scale(1.13)} 100%{transform:scale(1)} }
+  @keyframes pulseRing { 0%{transform:scale(.9); opacity:.8} 70%{transform:scale(1.25); opacity:.1} 100%{transform:scale(1.35); opacity:0} }
+
+  /* Neon ECG line (SVG) under title */
+  .ecg-wrap{ margin:.3rem 0 1.1rem 0; }
+  .ecg{ width:100%; height:74px; }
+  .ecg path{
+    fill:none; stroke:url(#grad); stroke-width:3;
+    filter: drop-shadow(0 0 6px rgba(69,244,255,.6));
+    stroke-linejoin:round; stroke-linecap:round;
+    stroke-dasharray: 6 10;
+    animation: dash 1.8s linear infinite;
+  }
+  @keyframes dash { to{ stroke-dashoffset: -160; } }
+
+  /* Uploader: cyber-pill with animated border */
   [data-testid="stFileUploader"] section { padding: 0; }
   [data-testid="stFileUploaderDropzone"]{
-    border: 2px solid transparent;
-    border-radius: 999px;
+    border: 2px solid transparent; border-radius: 16px;
     background:
-      linear-gradient(#fff5fa,#fff5fa) padding-box,
-      linear-gradient(90deg,#ff6fa0,#ff94b8,#ffb6cf,#ff94b8,#ff6fa0) border-box;
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(120deg, var(--pink), var(--vio), var(--cyan), var(--pink)) border-box;
     background-size: 100% 100%, 300% 100%;
-    animation: borderflow 6s linear infinite;
-    box-shadow: 0 8px 22px rgba(255,105,135,.14);
-    padding: .65rem 1rem;
-    transition: transform .15s ease, box-shadow .2s ease;
+    animation: borderflow 8s linear infinite;
+    box-shadow: 0 14px 34px rgba(69, 244, 255, .08), 0 10px 22px rgba(255,75,138,.12);
+    padding: .8rem 1rem; transition: transform .12s ease, box-shadow .2s ease;
   }
   @keyframes borderflow { 0%{background-position:0 0, 0 0} 100%{background-position:0 0, 300% 0} }
-  [data-testid="stFileUploaderDropzone"]:hover{
-    transform: translateY(-1px);
-    box-shadow: 0 12px 28px rgba(255,105,135,.18);
-  }
-  /* cloud icon tiny float */
-  [data-testid="stFileUploaderDropzone"] svg { filter: drop-shadow(0 4px 10px rgba(255,73,109,.25)); }
-  [data-testid="stFileUploaderDropzone"] svg path { animation: float 2.2s ease-in-out infinite; }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+  [data-testid="stFileUploaderDropzone"]:hover{ transform: translateY(-1px); }
 
-  /* Uploaded image fade-in + soft frame */
-  .uploaded-img img { 
-    border-radius: 16px; border:2px solid #ffc1d9;
-    box-shadow: 0 10px 28px rgba(255, 86, 110, .18);
-    animation: fadein .35s ease;
-  }
-  @keyframes fadein { from{opacity:0; transform:scale(.995)} to{opacity:1; transform:scale(1)} }
+  /* Uploaded image frame */
+  .uploaded-img img { border-radius: 18px; border:1px solid rgba(255,255,255,.06);
+    box-shadow: 0 14px 34px rgba(69,244,255,.10), 0 12px 28px rgba(255,75,138,.14); animation: fadein .28s ease; }
+  @keyframes fadein { from{opacity:0; transform:translateY(1px)} to{opacity:1; transform:translateY(0)} }
 
-  /* Primary button: pulse on hover */
+  /* Buttons */
   button[kind="primary"]{
-    border-radius: 12px !important; padding:.6rem 1.2rem !important; font-weight:700 !important;
-    box-shadow: 0 10px 20px rgba(255, 86, 110, .25) !important;
-    transition: transform .1s ease;
-  }
-  button[kind="primary"]:hover{ transform: translateY(-1px); }
-
-  /* Pretty pills in sidebar (สำหรับลิสต์คลาสถ้าต้องการ) */
-  .pill { display:inline-block; padding:.22rem .55rem; border-radius:999px;
-    background:#ffe6f2; border:1px solid #ffc7dd; color:#6b2340; font-weight:600; margin:0 .25rem .25rem 0;
-    font-size:.85rem;
+    border-radius: 12px !important; padding:.62rem 1.1rem !important; font-weight:700 !important;
+    background: linear-gradient(90deg, var(--pink), var(--vio), var(--cyan)) !important;
+    border:0 !important; box-shadow: 0 10px 22px rgba(255,75,138,.22) !important;
   }
 
-  /* Custom pink progress bar under uploader */
-  .pink-progress-wrap{ margin:.5rem 0 0.4rem 0; }
-  .pink-progress{ height:10px; border-radius:999px; background:#ffe8f3;
-    border:1px solid #ffb6cf; box-shadow: inset 0 1px 3px rgba(0,0,0,.06); overflow:hidden;}
-  .pink-progress .fill{ height:100%;
-    background: linear-gradient(90deg,#ff6fa0,#ffa3bd,#ffd5e6);
+  /* Pills for class names */
+  .pill{ display:inline-block; padding:.22rem .6rem; border-radius:999px;
+    background:rgba(69,244,255,.10); border:1px solid rgba(69,244,255,.25);
+    color:#cdefff; font-weight:600; margin:0 .25rem .25rem 0; font-size:.82rem; }
+
+  /* Pink progress */
+  .pink-progress-wrap{ margin:.5rem 0 .4rem 0; }
+  .pink-progress{ height:10px; border-radius:999px; background:rgba(255,75,138,.12);
+    border:1px solid rgba(255,75,138,.35); overflow:hidden;}
+  .pink-progress .fill{ height:100%; background: linear-gradient(90deg, var(--pink), var(--pink2));
     width:0%; transition: width .08s ease; }
-  .pink-progress-label{ font-size:.85rem; color:#6b2340; opacity:.85; margin-bottom:.15rem;}
+  .pink-progress-label{ font-size:.85rem; color:#e6e9ff; opacity:.75; margin-bottom:.15rem;}
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------- Header -------------------------------------
-st.markdown('<div class="hero"><span class="heart">🫀</span>'
-            '<h1 style="margin:0;">ECG Classification Web App</h1></div>', unsafe_allow_html=True)
-st.caption("Upload ECG scalogram/spectrogram image → select a model → get class probabilities.")
+st.markdown(
+    """
+    <div class="hero">
+      <span class="heart">🫀</span>
+      <h1 style="margin:0;">ECG Classification Web App</h1>
+    </div>
+    <div class="ecg-wrap">
+      <svg class="ecg" viewBox="0 0 800 74" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#45f4ff"/>
+            <stop offset="50%"  stop-color="#ff4b8a"/>
+            <stop offset="100%" stop-color="#8a7dff"/>
+          </linearGradient>
+        </defs>
+        <!-- Neon ECG line -->
+        <path d="M0,37 L120,37 150,37 165,20 180,55 195,37 250,37 270,37 285,12 300,60 315,37 420,37 440,37 455,18 470,58 485,37 600,37 620,37 635,10 650,60 665,37 800,37"/>
+      </svg>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+st.caption("Upload ECG scalogram/spectrogram → pick a model → get AI-powered class probabilities.")
 
 # -------------------------------- Sidebar -----------------------------------
 st.sidebar.header("Settings")
@@ -115,7 +201,7 @@ if not os.path.exists(ckpt_path):
     st.sidebar.error("Checkpoint not found in ./models")
     st.stop()
 
-# 3) ตั้งค่าคลาส (ยังแก้ได้ แต่ควรตรงกับตอนเทรน)
+# 3) ตั้งค่าคลาส (ควรตรงกับตอนเทรน)
 class_names = st.sidebar.text_input(
     "Class names (comma-separated)",
     value="CD, HYP, MI, NORM, STTC"
@@ -144,7 +230,7 @@ st.success("Model ready!", icon="✅")
 # ----------------------------- Upload + Progress + Predict -------------------
 uploaded = st.file_uploader("Upload an ECG image (.jpg/.png)", type=["jpg","jpeg","png"])
 
-# แสดง progress bar ระหว่างอ่านไฟล์หลังผู้ใช้เลือก (จำลองการอัปโหลดให้รู้สึกต่อเนื่อง)
+# แสดง progress bar ระหว่างอ่านไฟล์หลังผู้ใช้เลือก (จำลองความต่อเนื่อง)
 progress_ph = st.empty()
 
 if uploaded is not None:
@@ -198,7 +284,9 @@ if uploaded is not None:
         st.subheader("Prediction")
         best_label, best_prob = top[0]
         st.markdown(f"**Top-1:** `{best_label}` — **{best_prob*100:.2f}%**")
-        st.balloons()
+
+        # ใช้เอฟเฟกต์หัวใจเต้นตุบๆ แทนลูกโป่ง
+        heart_pulse_effect()
 
         df = pd.DataFrame({"class": class_names, "prob": probs[0]})
         st.bar_chart(df.set_index("class"))
