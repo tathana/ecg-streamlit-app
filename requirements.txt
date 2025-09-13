@@ -1,8 +1,7 @@
 --prefer-binary
-streamlit==1.32.2
+streamlit==1.39.0
 torch==2.6.0
 torchvision==0.21.0
-torchaudio==2.6.0
 timm==0.9.2
 pillow==10.4.0
 numpy==2.1.3
